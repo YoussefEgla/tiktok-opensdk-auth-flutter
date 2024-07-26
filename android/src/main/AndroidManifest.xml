@@ -1,2 +1,13 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="tiktok.tiktok_open_sdk_auth">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.github.YoussefEgla.tiktok_sdk_plugin">
+
+  <!-- 
+    Note: Due to changes in Android 11 regarding package visibility,
+    When implementing Tiktok SDK for devices targeting Android 11 and higher,
+    The Following queries are required.
+  -->
+  <queries>
+    <package android:name="com.zhiliaoapp.musically" />
+    <package android:name="com.ss.android.ugc.trill" />
+  </queries>
+
 </manifest>
