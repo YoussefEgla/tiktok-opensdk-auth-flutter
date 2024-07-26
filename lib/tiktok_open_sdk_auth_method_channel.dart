@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:tiktok_open_sdk_auth/auth_models.dart';
 
 import 'tiktok_open_sdk_auth_platform_interface.dart';
 
@@ -10,8 +11,25 @@ class MethodChannelTiktokOpenSdkAuth extends TiktokOpenSdkAuthPlatform {
   final methodChannel = const MethodChannel('tiktok_open_sdk_auth');
 
   @override
-  Future<String?> getPlatformVersion() async {
-    final version = await methodChannel.invokeMethod<String>('getPlatformVersion');
-    return version;
+  Future<bool> init() async {
+    final result = await methodChannel.invokeMethod<bool>('init');
+    return result ?? false;
+  }
+
+  @override
+  Future<bool> authorize(AuthRequest request) async {
+    final result =
+        await methodChannel.invokeMethod<bool>('authorize', request.toMap());
+    return result ?? false;
+  }
+
+  @override
+  Future<AuthResponse?> getAuthResponseFromIntent(String redirectUri) async {
+    final result =
+        await methodChannel.invokeMethod<Map>('getAuthResponseFromIntent', {
+      'redirectUri': redirectUri,
+    });
+
+    return result == null ? null : AuthResponse.fromMap(result);
   }
 }

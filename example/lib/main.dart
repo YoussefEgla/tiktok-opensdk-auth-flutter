@@ -2,10 +2,24 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:tiktok_open_sdk_auth/auth_models.dart';
 import 'package:tiktok_open_sdk_auth/tiktok_open_sdk_auth.dart';
 
-void main() {
+const String tiktokClientIdName = 'TIKTOK_CLIENT_ID';
+const String tiktokRedirectUriName = 'TIKTOK_REDIRECT_URI';
+
+Future<void> main() async {
+  await dotenv.load(fileName: ".env");
+
+  if (!dotenv.isEveryDefined([tiktokClientIdName, tiktokRedirectUriName])) {
+    throw Exception(
+        'Please provide $tiktokClientIdName and $tiktokRedirectUriName in .env file');
+  }
+
   runApp(const MyApp());
+
+  return;
 }
 
 class MyApp extends StatefulWidget {
@@ -16,35 +30,36 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
+  var _tiktokInitialized = false;
   final _tiktokOpenSdkAuthPlugin = TiktokOpenSdkAuth();
 
   @override
   void initState() {
     super.initState();
-    initPlatformState();
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
-    String platformVersion;
+  Future<void> initTiktokAuth() async {
     // Platform messages may fail, so we use a try/catch PlatformException.
-    // We also handle the message potentially returning null.
     try {
-      platformVersion =
-          await _tiktokOpenSdkAuthPlugin.getPlatformVersion() ?? 'Unknown platform version';
+      final bool result = await _tiktokOpenSdkAuthPlugin.init();
+      setState(() {
+        _tiktokInitialized = result;
+      });
     } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
+      _tiktokInitialized = false;
     }
 
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
     if (!mounted) return;
+  }
 
-    setState(() {
-      _platformVersion = platformVersion;
-    });
+  Future<void> loginWithTiktok() async {
+    final AuthRequest request = AuthRequest(
+        authMethod: AuthMethod.chromeTab,
+        clientKey: dotenv.env[tiktokClientIdName]!,
+        redirectUri: dotenv.env[tiktokRedirectUriName]!);
+
+    await _tiktokOpenSdkAuthPlugin.authorize(request);
   }
 
   @override
@@ -52,10 +67,27 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Plugin example app'),
+          title: const Text('Tiktok Open SDK Auth Example'),
         ),
         body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Text('Tiktok Auth Client Initialized: $_tiktokInitialized\n'),
+              ElevatedButton(
+                onPressed: () {
+                  initTiktokAuth();
+                },
+                child: const Text('Initialize Tiktok Client'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  loginWithTiktok();
+                },
+                child: const Text('Login with Tiktok'),
+              )
+            ],
+          ),
         ),
       ),
     );
